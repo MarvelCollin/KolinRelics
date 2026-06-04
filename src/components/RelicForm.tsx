@@ -1,6 +1,12 @@
 import { useState } from "react";
-import type { Relic, RelicInput } from "../types";
-import { uploadImages } from "../lib/relics";
+import { Loader2, Upload, X } from "lucide-react";
+import { toast } from "sonner";
+import type { Relic, RelicInput } from "@/types";
+import { uploadImages } from "@/lib/relics";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 
 interface Props {
   initial?: Relic;
@@ -25,8 +31,12 @@ function RelicForm({ initial, onSubmit, onCancel }: Props) {
     try {
       const uploaded = await uploadImages(Array.from(fileList));
       setImages((prev) => [...prev, ...uploaded]);
+      toast.success(
+        `${uploaded.length} ${uploaded.length === 1 ? "photo" : "photos"} uploaded`
+      );
     } catch (err) {
       setError((err as Error).message);
+      toast.error("Upload failed", { description: (err as Error).message });
     } finally {
       setUploading(false);
     }
@@ -55,77 +65,106 @@ function RelicForm({ initial, onSubmit, onCancel }: Props) {
   }
 
   return (
-    <form className="form" onSubmit={handleSubmit}>
-      <h3>{initial ? "Edit relic" : "New relic"}</h3>
+    <form className="space-y-4" onSubmit={handleSubmit}>
+      <div className="space-y-2">
+        <Label htmlFor="name">Name</Label>
+        <Input
+          id="name"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="Ancient amulet"
+          required
+        />
+      </div>
 
-      <label>
-        Name
-        <input value={name} onChange={(e) => setName(e.target.value)} required />
-      </label>
-
-      <label>
-        Description
-        <textarea
+      <div className="space-y-2">
+        <Label htmlFor="description">Description</Label>
+        <Textarea
+          id="description"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
+          placeholder="Provenance, condition, notes..."
           rows={3}
         />
-      </label>
+      </div>
 
-      <div className="form-row">
-        <label>
-          Buy price
-          <input
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="priceBuy">Buy price</Label>
+          <Input
+            id="priceBuy"
             type="number"
-            step="0.01"
+            step="1"
+            min="0"
             value={priceBuy}
             onChange={(e) => setPriceBuy(e.target.value)}
+            placeholder="0"
           />
-        </label>
-        <label>
-          Current price
-          <input
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="priceCurrent">Current price</Label>
+          <Input
+            id="priceCurrent"
             type="number"
-            step="0.01"
+            step="1"
+            min="0"
             value={priceCurrent}
             onChange={(e) => setPriceCurrent(e.target.value)}
+            placeholder="0"
+          />
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label>Images</Label>
+        <label className="flex cursor-pointer items-center justify-center gap-2 rounded-md border border-dashed border-input py-6 text-sm text-muted-foreground transition-colors hover:border-ring hover:text-foreground">
+          {uploading ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Upload className="h-4 w-4" />
+          )}
+          {uploading ? "Uploading..." : "Click to upload photos"}
+          <input
+            type="file"
+            accept="image/*"
+            multiple
+            className="hidden"
+            onChange={(e) => handleFiles(e.target.files)}
           />
         </label>
       </div>
 
-      <label>
-        Images
-        <input
-          type="file"
-          accept="image/*"
-          multiple
-          onChange={(e) => handleFiles(e.target.files)}
-        />
-      </label>
-      {uploading && <p className="muted">Uploading...</p>}
-
       {images.length > 0 && (
-        <div className="form-images">
+        <div className="grid grid-cols-4 gap-2">
           {images.map((url) => (
-            <div key={url} className="form-thumb">
-              <img src={url} alt="relic" />
-              <button type="button" onClick={() => removeImage(url)}>
-                Remove
+            <div key={url} className="group relative aspect-square">
+              <img
+                src={url}
+                alt="relic"
+                className="h-full w-full rounded-md object-cover"
+              />
+              <button
+                type="button"
+                onClick={() => removeImage(url)}
+                className="absolute right-1 top-1 rounded-full bg-black/60 p-1 text-white opacity-0 transition-opacity group-hover:opacity-100"
+              >
+                <X className="h-3 w-3" />
               </button>
             </div>
           ))}
         </div>
       )}
 
-      {error && <p className="error">{error}</p>}
+      {error && <p className="text-sm text-destructive">{error}</p>}
 
-      <div className="form-actions">
-        <button type="submit" className="btn btn-primary" disabled={saving || uploading}>
-          {saving ? "Saving..." : "Save"}
-        </button>
-        <button type="button" className="btn" onClick={onCancel}>
+      <div className="flex justify-end gap-2 pt-2">
+        <Button type="button" variant="outline" onClick={onCancel}>
           Cancel
-        </button>
+        </Button>
+        <Button type="submit" disabled={saving || uploading}>
+          {saving && <Loader2 className="h-4 w-4 animate-spin" />}
+          {saving ? "Saving" : "Save relic"}
+        </Button>
       </div>
     </form>
   );

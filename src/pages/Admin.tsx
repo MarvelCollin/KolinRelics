@@ -1,23 +1,47 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
-import type { Relic, RelicInput } from "../types";
+import { Plus, Pencil, Trash2, Lock, ImageOff, Loader2 } from "lucide-react";
+import { toast } from "sonner";
+import type { Relic, RelicInput } from "@/types";
 import {
   listRelics,
   createRelic,
   updateRelic,
   deleteRelic,
-} from "../lib/relics";
-import RelicForm from "../components/RelicForm";
+} from "@/lib/relics";
+import { formatPrice } from "@/lib/utils";
+import RelicForm from "@/components/RelicForm";
+import RelicRowSkeleton from "@/components/RelicRowSkeleton";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const ADMIN_USER = "admin";
 const ADMIN_PASS = import.meta.env.VITE_BYPASS_ADMIN;
-
-function formatPrice(value: number): string {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-  }).format(value);
-}
 
 function Admin() {
   const [authed, setAuthed] = useState(false);
@@ -27,17 +51,19 @@ function Admin() {
 
   const [relics, setRelics] = useState<Relic[]>([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Relic | null>(null);
-  const [creating, setCreating] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState<Relic | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   async function refresh() {
     setLoading(true);
-    setError("");
     try {
       setRelics(await listRelics());
     } catch (err) {
-      setError((err as Error).message);
+      toast.error("Failed to load relics", {
+        description: (err as Error).message,
+      });
     } finally {
       setLoading(false);
     }
@@ -52,136 +78,276 @@ function Admin() {
     if (username === ADMIN_USER && password === ADMIN_PASS) {
       setAuthed(true);
       setLoginError("");
+      toast.success("Welcome back, admin");
     } else {
-      setLoginError("Invalid credentials");
+      setLoginError("Invalid username or password");
     }
   }
 
-  async function handleCreate(input: RelicInput) {
-    await createRelic(input);
-    setCreating(false);
-    await refresh();
-  }
-
-  async function handleUpdate(input: RelicInput) {
-    if (!editing) return;
-    await updateRelic(editing.id, input);
+  function openCreate() {
     setEditing(null);
+    setDialogOpen(true);
+  }
+
+  function openEdit(relic: Relic) {
+    setEditing(relic);
+    setDialogOpen(true);
+  }
+
+  async function handleSubmit(input: RelicInput) {
+    const isEdit = Boolean(editing);
+    if (editing) {
+      await updateRelic(editing.id, input);
+    } else {
+      await createRelic(input);
+    }
+    setDialogOpen(false);
+    setEditing(null);
+    toast.success(isEdit ? "Relic updated" : "Relic added", {
+      description: input.name,
+    });
     await refresh();
   }
 
-  async function handleDelete(id: string) {
-    if (!confirm("Delete this relic?")) return;
+  async function confirmDelete() {
+    if (!pendingDelete) return;
+    setDeleting(true);
     try {
-      await deleteRelic(id);
+      await deleteRelic(pendingDelete.id);
+      toast.success("Relic deleted", { description: pendingDelete.name });
+      setPendingDelete(null);
       await refresh();
     } catch (err) {
-      setError((err as Error).message);
+      toast.error("Failed to delete", { description: (err as Error).message });
+    } finally {
+      setDeleting(false);
     }
   }
 
   if (!authed) {
     return (
-      <div className="page">
-        <header className="topbar">
-          <h1>Admin Login</h1>
-          <Link className="btn" to="/">
-            Home
-          </Link>
-        </header>
-        <form className="form form-narrow" onSubmit={handleLogin}>
-          <label>
-            Username
-            <input value={username} onChange={(e) => setUsername(e.target.value)} />
-          </label>
-          <label>
-            Password
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-          </label>
-          {loginError && <p className="error">{loginError}</p>}
-          <button type="submit" className="btn btn-primary">
-            Sign in
-          </button>
-        </form>
+      <div className="flex min-h-screen items-center justify-center px-4">
+        <Card className="w-full max-w-sm">
+          <CardHeader className="text-center">
+            <div className="mx-auto mb-2 flex h-11 w-11 items-center justify-center rounded-full bg-muted">
+              <Lock className="h-5 w-5" />
+            </div>
+            <CardTitle className="text-xl">Admin Access</CardTitle>
+            <CardDescription>Sign in to manage the catalog.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form className="space-y-4" onSubmit={handleLogin}>
+              <div className="space-y-2">
+                <Label htmlFor="username">Username</Label>
+                <Input
+                  id="username"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  autoComplete="username"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  autoComplete="current-password"
+                />
+              </div>
+              {loginError && (
+                <p className="text-sm text-destructive">{loginError}</p>
+              )}
+              <Button type="submit" className="w-full">
+                Sign in
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
   return (
-    <div className="page">
-      <header className="topbar">
-        <h1>Admin Dashboard</h1>
-        <div className="topbar-actions">
-          <Link className="btn" to="/">
-            Home
-          </Link>
-          <button className="btn" onClick={() => setAuthed(false)}>
-            Sign out
-          </button>
+    <div className="min-h-screen">
+      <header className="border-b border-border/60">
+        <div className="container flex items-center justify-between py-5">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Admin Dashboard</h1>
+            <p className="text-sm text-muted-foreground">
+              {relics.length} {relics.length === 1 ? "relic" : "relics"} in the
+              catalog
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button onClick={openCreate}>
+              <Plus className="h-4 w-4" />
+              Add relic
+            </Button>
+            <Button variant="outline" onClick={() => setAuthed(false)}>
+              Sign out
+            </Button>
+          </div>
         </div>
       </header>
 
-      {!creating && !editing && (
-        <button className="btn btn-primary" onClick={() => setCreating(true)}>
-          Add relic
-        </button>
-      )}
+      <main className="container py-8">
+        {loading ? (
+          <Card>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border text-left text-muted-foreground">
+                    <th className="px-4 py-3 font-medium">Relic</th>
+                    <th className="px-4 py-3 font-medium">Buy</th>
+                    <th className="px-4 py-3 font-medium">Current</th>
+                    <th className="px-4 py-3 font-medium">Photos</th>
+                    <th className="px-4 py-3 text-right font-medium">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <RelicRowSkeleton key={i} />
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </Card>
+        ) : relics.length === 0 ? (
+          <div className="flex flex-col items-center gap-3 py-20 text-center text-muted-foreground">
+            <p>No relics yet. Add your first one.</p>
+            <Button onClick={openCreate}>
+              <Plus className="h-4 w-4" />
+              Add relic
+            </Button>
+          </div>
+        ) : (
+          <Card>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border text-left text-muted-foreground">
+                    <th className="px-4 py-3 font-medium">Relic</th>
+                    <th className="px-4 py-3 font-medium">Buy</th>
+                    <th className="px-4 py-3 font-medium">Current</th>
+                    <th className="px-4 py-3 font-medium">Photos</th>
+                    <th className="px-4 py-3 text-right font-medium">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {relics.map((relic) => (
+                    <tr
+                      key={relic.id}
+                      className="border-b border-border/50 transition-colors last:border-0 hover:bg-muted/40"
+                    >
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-3">
+                          {relic.images[0] ? (
+                            <img
+                              src={relic.images[0]}
+                              alt={relic.name}
+                              className="h-12 w-12 rounded-md object-cover"
+                            />
+                          ) : (
+                            <div className="flex h-12 w-12 items-center justify-center rounded-md bg-muted text-muted-foreground">
+                              <ImageOff className="h-4 w-4" />
+                            </div>
+                          )}
+                          <div>
+                            <div className="font-medium">{relic.name}</div>
+                            <div className="line-clamp-1 max-w-xs text-xs text-muted-foreground">
+                              {relic.description}
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-muted-foreground">
+                        {formatPrice(relic.price_buy)}
+                      </td>
+                      <td className="px-4 py-3">
+                        <Badge variant="success">
+                          {formatPrice(relic.price_current)}
+                        </Badge>
+                      </td>
+                      <td className="px-4 py-3 text-muted-foreground">
+                        {relic.images.length}
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={() => openEdit(relic)}
+                            aria-label="Edit relic"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            size="icon"
+                            onClick={() => setPendingDelete(relic)}
+                            aria-label="Delete relic"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </Card>
+        )}
+      </main>
 
-      {creating && (
-        <RelicForm onSubmit={handleCreate} onCancel={() => setCreating(false)} />
-      )}
-      {editing && (
-        <RelicForm
-          initial={editing}
-          onSubmit={handleUpdate}
-          onCancel={() => setEditing(null)}
-        />
-      )}
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{editing ? "Edit relic" : "New relic"}</DialogTitle>
+            <DialogDescription>
+              {editing
+                ? "Update the details and photos."
+                : "Add a relic with details and photos."}
+            </DialogDescription>
+          </DialogHeader>
+          <RelicForm
+            initial={editing ?? undefined}
+            onSubmit={handleSubmit}
+            onCancel={() => setDialogOpen(false)}
+          />
+        </DialogContent>
+      </Dialog>
 
-      {loading && <p className="muted">Loading...</p>}
-      {error && <p className="error">{error}</p>}
-
-      <table className="table">
-        <thead>
-          <tr>
-            <th>Image</th>
-            <th>Name</th>
-            <th>Buy</th>
-            <th>Current</th>
-            <th>Photos</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          {relics.map((relic) => (
-            <tr key={relic.id}>
-              <td>
-                {relic.images[0] ? (
-                  <img className="table-thumb" src={relic.images[0]} alt={relic.name} />
-                ) : (
-                  <span className="muted">none</span>
-                )}
-              </td>
-              <td>{relic.name}</td>
-              <td>{formatPrice(relic.price_buy)}</td>
-              <td>{formatPrice(relic.price_current)}</td>
-              <td>{relic.images.length}</td>
-              <td className="table-actions">
-                <button className="btn" onClick={() => setEditing(relic)}>
-                  Edit
-                </button>
-                <button className="btn btn-danger" onClick={() => handleDelete(relic.id)}>
-                  Delete
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <AlertDialog
+        open={Boolean(pendingDelete)}
+        onOpenChange={(open) => !open && setPendingDelete(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this relic?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {pendingDelete?.name} will be permanently removed from the catalog.
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                confirmDelete();
+              }}
+              disabled={deleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
