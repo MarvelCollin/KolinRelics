@@ -1,0 +1,54 @@
+:root {
+  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  color-scheme: light dark;
+  color: rgba(255, 255, 255, 0.87);
+  background-color: #242424;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  place-items: center;
+  justify-content: center;
+}
+
+.app {
+  text-align: center;
+  padding: 2rem;
+}
+
+.app h1 {
+  font-size: 3rem;
+  margin-bottom: 0.5rem;
+}
+
+.status {
+  margin-top: 2rem;
+  padding: 1rem 1.5rem;
+  border-radius: 10px;
+  display: inline-flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  background-color: #1a1a1a;
+}
+
+.status-checking {
+  border: 1px solid #888;
+}
+
+.status-connected {
+  border: 1px solid #3fb950;
+}
+
+.status-error {
+  border: 1px solid #f85149;
+}
+
+.status small {
+  opacity: 0.7;
+}
