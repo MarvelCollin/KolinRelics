@@ -71,8 +71,9 @@ function RelicCard({ relic }: Props) {
               draggable={false}
               width={800}
               height={600}
+              onClick={() => setDetailOpen(true)}
               className={cn(
-                "absolute inset-0 block h-full w-full object-cover",
+                "absolute inset-0 block h-full w-full cursor-pointer object-cover",
                 isSold && "grayscale"
               )}
             />
