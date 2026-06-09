@@ -12,6 +12,7 @@ interface Props {
 function RelicCard({ relic }: Props) {
   const [active, setActive] = useState(0);
   const hasImages = relic.images.length > 0;
+  const isSold = relic.status === "sold";
 
   return (
     <Card className="overflow-hidden flex flex-col transition-shadow hover:shadow-lg hover:shadow-black/20">
@@ -20,13 +21,21 @@ function RelicCard({ relic }: Props) {
           <img
             src={relic.images[active]}
             alt={relic.name}
-            className="h-full w-full object-cover"
+            className={cn(
+              "h-full w-full object-cover",
+              isSold && "opacity-70 grayscale"
+            )}
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center text-muted-foreground">
             <ImageOff className="h-10 w-10" />
           </div>
         )}
+        <div className="absolute left-2 top-2">
+          <Badge variant={isSold ? "muted" : "info"} className="uppercase">
+            {relic.status}
+          </Badge>
+        </div>
         {relic.images.length > 1 && (
           <div className="absolute bottom-2 left-1/2 flex -translate-x-1/2 gap-1.5 rounded-full bg-black/50 px-2 py-1 backdrop-blur">
             {relic.images.map((url, index) => (

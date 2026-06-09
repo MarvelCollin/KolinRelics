@@ -172,27 +172,27 @@ function Admin() {
   return (
     <div className="min-h-screen">
       <header className="border-b border-border/60">
-        <div className="container flex items-center justify-between py-5">
+        <div className="container flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between sm:py-5">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">Admin Dashboard</h1>
+            <h1 className="text-xl font-bold tracking-tight sm:text-2xl">Admin Dashboard</h1>
             <p className="text-sm text-muted-foreground">
               {relics.length} {relics.length === 1 ? "relic" : "relics"} in the
               catalog
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <Button onClick={openCreate}>
+            <Button onClick={openCreate} className="flex-1 sm:flex-none">
               <Plus className="h-4 w-4" />
               Add relic
             </Button>
-            <Button variant="outline" onClick={() => setAuthed(false)}>
+            <Button variant="outline" onClick={() => setAuthed(false)} className="flex-1 sm:flex-none">
               Sign out
             </Button>
           </div>
         </div>
       </header>
 
-      <main className="container py-8">
+      <main className="container py-6 sm:py-8">
         {loading ? (
           <Card>
             <div className="overflow-x-auto">
@@ -200,6 +200,7 @@ function Admin() {
                 <thead>
                   <tr className="border-b border-border text-left text-muted-foreground">
                     <th className="px-4 py-3 font-medium">Relic</th>
+                    <th className="px-4 py-3 font-medium">Status</th>
                     <th className="px-4 py-3 font-medium">Buy</th>
                     <th className="px-4 py-3 font-medium">Current</th>
                     <th className="px-4 py-3 font-medium">Photos</th>
@@ -229,6 +230,7 @@ function Admin() {
                 <thead>
                   <tr className="border-b border-border text-left text-muted-foreground">
                     <th className="px-4 py-3 font-medium">Relic</th>
+                    <th className="px-4 py-3 font-medium">Status</th>
                     <th className="px-4 py-3 font-medium">Buy</th>
                     <th className="px-4 py-3 font-medium">Current</th>
                     <th className="px-4 py-3 font-medium">Photos</th>
@@ -261,6 +263,11 @@ function Admin() {
                             </div>
                           </div>
                         </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <Badge variant={relic.status === "sold" ? "muted" : "info"} className="uppercase">
+                          {relic.status}
+                        </Badge>
                       </td>
                       <td className="px-4 py-3 text-muted-foreground">
                         {formatPrice(relic.price_buy)}

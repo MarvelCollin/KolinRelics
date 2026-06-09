@@ -13,6 +13,9 @@ function RelicRowSkeleton() {
         </div>
       </td>
       <td className="px-4 py-3">
+        <Skeleton className="h-6 w-14 rounded-md" />
+      </td>
+      <td className="px-4 py-3">
         <Skeleton className="h-4 w-20" />
       </td>
       <td className="px-4 py-3">

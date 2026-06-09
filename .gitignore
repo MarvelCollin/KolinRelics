@@ -17,9 +17,11 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
-.vercel
 *.tsbuildinfo
 coverage
 .cache
+
+supabase/.branches
+supabase/.temp
 
 DESIGN.md

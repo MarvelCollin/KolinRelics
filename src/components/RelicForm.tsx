@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { Loader2, Upload, X } from "lucide-react";
+import { Loader2, Upload, X, Link as LinkIcon } from "lucide-react";
 import { toast } from "sonner";
-import type { Relic, RelicInput } from "@/types";
+import type { Relic, RelicInput, RelicStatus } from "@/types";
 import { uploadImages } from "@/lib/relics";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,6 +20,8 @@ function RelicForm({ initial, onSubmit, onCancel }: Props) {
   const [priceBuy, setPriceBuy] = useState(String(initial?.price_buy ?? ""));
   const [priceCurrent, setPriceCurrent] = useState(String(initial?.price_current ?? ""));
   const [images, setImages] = useState<string[]>(initial?.images ?? []);
+  const [status, setStatus] = useState<RelicStatus>(initial?.status ?? "new");
+  const [imageUrl, setImageUrl] = useState("");
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -42,6 +44,24 @@ function RelicForm({ initial, onSubmit, onCancel }: Props) {
     }
   }
 
+  function addImageUrl() {
+    const url = imageUrl.trim();
+    if (!url) return;
+    try {
+      new URL(url);
+    } catch {
+      toast.error("Invalid URL");
+      return;
+    }
+    if (images.includes(url)) {
+      toast.error("Image already added");
+      return;
+    }
+    setImages((prev) => [...prev, url]);
+    setImageUrl("");
+    toast.success("Image added");
+  }
+
   function removeImage(url: string) {
     setImages((prev) => prev.filter((item) => item !== url));
   }
@@ -57,6 +77,7 @@ function RelicForm({ initial, onSubmit, onCancel }: Props) {
         price_buy: Number(priceBuy) || 0,
         price_current: Number(priceCurrent) || 0,
         images,
+        status,
       });
     } catch (err) {
       setError((err as Error).message);
@@ -116,6 +137,19 @@ function RelicForm({ initial, onSubmit, onCancel }: Props) {
       </div>
 
       <div className="space-y-2">
+        <Label htmlFor="status">Status</Label>
+        <select
+          id="status"
+          value={status}
+          onChange={(e) => setStatus(e.target.value as RelicStatus)}
+          className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+        >
+          <option value="new">New</option>
+          <option value="sold">Sold</option>
+        </select>
+      </div>
+
+      <div className="space-y-3">
         <Label>Images</Label>
         <label className="flex cursor-pointer items-center justify-center gap-2 rounded-md border border-dashed border-input py-6 text-sm text-muted-foreground transition-colors hover:border-ring hover:text-foreground">
           {uploading ? (
@@ -132,10 +166,38 @@ function RelicForm({ initial, onSubmit, onCancel }: Props) {
             onChange={(e) => handleFiles(e.target.files)}
           />
         </label>
+
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <span className="h-px flex-1 bg-border" />
+          OR
+          <span className="h-px flex-1 bg-border" />
+        </div>
+
+        <div className="flex gap-2">
+          <div className="relative flex-1">
+            <LinkIcon className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              type="url"
+              value={imageUrl}
+              onChange={(e) => setImageUrl(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  addImageUrl();
+                }
+              }}
+              placeholder="https://example.com/photo.jpg"
+              className="pl-8"
+            />
+          </div>
+          <Button type="button" variant="outline" onClick={addImageUrl}>
+            Add
+          </Button>
+        </div>
       </div>
 
       {images.length > 0 && (
-        <div className="grid grid-cols-4 gap-2">
+        <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
           {images.map((url) => (
             <div key={url} className="group relative aspect-square">
               <img
@@ -146,7 +208,7 @@ function RelicForm({ initial, onSubmit, onCancel }: Props) {
               <button
                 type="button"
                 onClick={() => removeImage(url)}
-                className="absolute right-1 top-1 rounded-full bg-black/60 p-1 text-white opacity-0 transition-opacity group-hover:opacity-100"
+                className="absolute right-1 top-1 rounded-full bg-black/60 p-1 text-white opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100"
               >
                 <X className="h-3 w-3" />
               </button>

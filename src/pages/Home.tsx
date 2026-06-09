@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Gem, AlertCircle } from "lucide-react";
+import { Gem, AlertCircle, MessageCircle, Phone } from "lucide-react";
 import { toast } from "sonner";
 import { listRelics } from "@/lib/relics";
 import type { Relic } from "@/types";
@@ -33,23 +33,36 @@ function Home() {
   return (
     <div className="min-h-screen">
       <header className="border-b border-border/60 bg-gradient-to-b from-muted/40 to-transparent">
-        <div className="container py-16 text-center">
-          <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-border bg-card px-4 py-1.5 text-sm text-muted-foreground">
-            <Gem className="h-4 w-4" />
-            Curated collection
-          </div>
-          <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
+        <div className="container py-10 text-center sm:py-16">
+          <h1 className="text-3xl font-bold tracking-tight sm:text-5xl">
             Kolin Relics
           </h1>
-          <p className="mx-auto mt-3 max-w-xl text-muted-foreground">
-            A catalog of relics, their provenance, and current market value.
-          </p>
+          <div className="mt-4 flex flex-col items-center justify-center gap-2 text-sm text-muted-foreground sm:flex-row sm:gap-6">
+            <a
+              href="https://line.me/ti/p/~kolinpakec"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 transition-colors hover:text-foreground"
+            >
+              <MessageCircle className="h-4 w-4" />
+              Line: kolinpakec (username: kolin)
+            </a>
+            <a
+              href="https://wa.me/6285716915343"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 transition-colors hover:text-foreground"
+            >
+              <Phone className="h-4 w-4" />
+              WhatsApp: 085716915343
+            </a>
+          </div>
         </div>
       </header>
 
-      <main className="container py-10">
+      <main className="container py-6 sm:py-10">
         {loading && (
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3 xl:grid-cols-4">
             {Array.from({ length: 8 }).map((_, i) => (
               <RelicCardSkeleton key={i} />
             ))}
@@ -79,7 +92,7 @@ function Home() {
         )}
 
         {!loading && !error && relics.length > 0 && (
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3 xl:grid-cols-4">
             {relics.map((relic) => (
               <RelicCard key={relic.id} relic={relic} />
             ))}
