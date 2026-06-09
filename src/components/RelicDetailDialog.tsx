@@ -1,5 +1,11 @@
 import { useRef, useState } from "react";
-import { ImageOff, ChevronLeft, ChevronRight, ShoppingBag } from "lucide-react";
+import {
+  ImageOff,
+  ChevronLeft,
+  ChevronRight,
+  ShoppingBag,
+  X,
+} from "lucide-react";
 import type { Relic } from "@/types";
 import { cn, formatPrice } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
@@ -22,6 +28,7 @@ const SWIPE_THRESHOLD = 40;
 
 function RelicDetailDialog({ relic, open, onOpenChange, onBuy }: Props) {
   const [active, setActive] = useState(0);
+  const [zoom, setZoom] = useState(false);
   const touchStartX = useRef<number | null>(null);
 
   if (!relic) return null;
@@ -56,7 +63,10 @@ function RelicDetailDialog({ relic, open, onOpenChange, onBuy }: Props) {
       open={open}
       onOpenChange={(o) => {
         onOpenChange(o);
-        if (!o) setActive(0);
+        if (!o) {
+          setActive(0);
+          setZoom(false);
+        }
       }}
     >
       <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-lg">
@@ -78,8 +88,9 @@ function RelicDetailDialog({ relic, open, onOpenChange, onBuy }: Props) {
               loading="lazy"
               decoding="async"
               draggable={false}
+              onClick={() => setZoom(true)}
               className={cn(
-                "absolute inset-0 block h-full w-full object-cover",
+                "absolute inset-0 block h-full w-full cursor-zoom-in object-cover",
                 isSold && "grayscale"
               )}
             />
@@ -163,6 +174,62 @@ function RelicDetailDialog({ relic, open, onOpenChange, onBuy }: Props) {
           {isSold ? "Sold out" : "Buy"}
         </Button>
       </DialogContent>
+
+      {zoom && hasImages && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/90 p-4"
+          onClick={() => setZoom(false)}
+          onTouchStart={onTouchStart}
+          onTouchEnd={onTouchEnd}
+        >
+          <button
+            type="button"
+            aria-label="Close"
+            onClick={() => setZoom(false)}
+            className="absolute right-4 top-4 rounded-full bg-white/10 p-2 text-white transition hover:bg-white/25"
+          >
+            <X className="h-5 w-5" />
+          </button>
+
+          <img
+            src={relic.images[active]}
+            alt={relic.name}
+            draggable={false}
+            onClick={(e) => e.stopPropagation()}
+            className="max-h-full max-w-full object-contain"
+          />
+
+          {multipleImages && (
+            <>
+              <button
+                type="button"
+                aria-label="Previous image"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  prev();
+                }}
+                className="absolute left-4 top-1/2 -translate-y-1/2 rounded-full bg-white/10 p-2 text-white transition hover:bg-white/25"
+              >
+                <ChevronLeft className="h-6 w-6" />
+              </button>
+              <button
+                type="button"
+                aria-label="Next image"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  next();
+                }}
+                className="absolute right-4 top-1/2 -translate-y-1/2 rounded-full bg-white/10 p-2 text-white transition hover:bg-white/25"
+              >
+                <ChevronRight className="h-6 w-6" />
+              </button>
+              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-white/10 px-3 py-1 text-sm text-white">
+                {active + 1}/{relic.images.length}
+              </div>
+            </>
+          )}
+        </div>
+      )}
     </Dialog>
   );
 }
