@@ -39,36 +39,38 @@ npm run preview
    - `VITE_SUPABASE_PUBLISHABLE_KEY`
 4. The `Deploy to GitHub Pages` workflow runs on push to `main` and publishes to `https://marvelcollin.github.io/KolinRelics/`.
 
-## Database migrations (Supabase)
+## Admin user
 
-Schema lives in [supabase/migrations/](supabase/migrations/) — one timestamped SQL file per change.
+The admin panel uses Supabase Auth. RLS allows `anon` to read but only `authenticated` users can write.
 
-### One-time setup
+The login form accepts a **username** (e.g. `admin`); the frontend appends `@kolinrelics.local` before authenticating, so the underlying Supabase user must be `admin@kolinrelics.local`.
 
-1. Install Supabase CLI: https://supabase.com/docs/guides/cli
-2. Generate an access token at https://supabase.com/dashboard/account/tokens
-3. Link the project locally:
-   ```bash
-   supabase login
-   supabase link --project-ref llpbcorikvgizzbkadny
-   ```
+Create the user once in Supabase Dashboard → Authentication → Users → Add user:
 
-### Adding a migration
+- **Email:** `admin@kolinrelics.local`
+- **Password:** anything strong
+- ✅ Tick **"Auto Confirm User"**
 
-```bash
-supabase migration new short_name
-```
+Then log in at `/admin` with username `admin` and that password.
 
-Edit the new file under `supabase/migrations/`, then apply:
+## Database migrations
+
+Each schema change is a timestamped SQL file in [supabase/migrations/](supabase/migrations/). The bundled migration script connects via the connection pooler using credentials from `.env`.
+
+Apply all pending migrations:
 
 ```bash
-supabase db push
+npm run migrate
 ```
 
-### Auto-apply on push
+The script tracks applied migrations in a `_migrations` table and skips files already applied.
 
-The `Migrate Supabase` workflow runs on pushes to `main` that touch `supabase/migrations/**`. Add these repository secrets:
+Required `.env` entries:
 
-- `SUPABASE_ACCESS_TOKEN` — personal access token
-- `SUPABASE_PROJECT_REF` — `llpbcorikvgizzbkadny`
-- `SUPABASE_DB_PASSWORD` — DB password from Settings > Database
+```
+SUPABASE_DB_PASSWORD=...
+SUPABASE_PROJECT_REF=...
+SUPABASE_DB_REGION=aws-1-ap-southeast-1
+```
+
+To create a new migration, add a file under `supabase/migrations/` with a timestamp prefix newer than the previous one (e.g. `20260615120000_add_field.sql`).

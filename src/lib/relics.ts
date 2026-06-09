@@ -2,21 +2,24 @@ import { supabase } from "./supabase";
 import type { Relic, RelicInput } from "../types";
 
 const BUCKET = "relic-images";
+const COLUMNS = "id,name,description,price_buy,price_current,images,status,created_at";
 
-export async function listRelics(): Promise<Relic[]> {
+export async function listRelics(limit = 200): Promise<Relic[]> {
   const { data, error } = await supabase
     .from("relics")
-    .select("*")
-    .order("created_at", { ascending: false });
+    .select(COLUMNS)
+    .order("status", { ascending: true })
+    .order("created_at", { ascending: false })
+    .limit(limit);
   if (error) throw error;
-  return data as Relic[];
+  return (data ?? []) as Relic[];
 }
 
 export async function createRelic(input: RelicInput): Promise<Relic> {
   const { data, error } = await supabase
     .from("relics")
     .insert(input)
-    .select()
+    .select(COLUMNS)
     .single();
   if (error) throw error;
   return data as Relic;
@@ -27,7 +30,7 @@ export async function updateRelic(id: string, input: RelicInput): Promise<Relic>
     .from("relics")
     .update(input)
     .eq("id", id)
-    .select()
+    .select(COLUMNS)
     .single();
   if (error) throw error;
   return data as Relic;
@@ -39,16 +42,18 @@ export async function deleteRelic(id: string): Promise<void> {
 }
 
 export async function uploadImages(files: File[]): Promise<string[]> {
-  const urls: string[] = [];
-  for (const file of files) {
-    const extension = file.name.split(".").pop() ?? "bin";
+  const tasks = files.map(async (file) => {
+    const extension = (file.name.split(".").pop() ?? "bin").toLowerCase();
     const path = `${crypto.randomUUID()}.${extension}`;
     const { error } = await supabase.storage
       .from(BUCKET)
-      .upload(path, file, { cacheControl: "3600", upsert: false });
+      .upload(path, file, {
+        cacheControl: "31536000",
+        upsert: false,
+        contentType: file.type || undefined,
+      });
     if (error) throw error;
-    const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
-    urls.push(data.publicUrl);
-  }
-  return urls;
+    return supabase.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
+  });
+  return Promise.all(tasks);
 }

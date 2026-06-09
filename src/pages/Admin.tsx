@@ -8,6 +8,7 @@ import {
   updateRelic,
   deleteRelic,
 } from "@/lib/relics";
+import { supabase } from "@/lib/supabase";
 import { formatPrice } from "@/lib/utils";
 import RelicForm from "@/components/RelicForm";
 import RelicRowSkeleton from "@/components/RelicRowSkeleton";
@@ -40,14 +41,13 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-const ADMIN_USER = "admin";
-const ADMIN_PASS = import.meta.env.VITE_BYPASS_ADMIN;
-
 function Admin() {
   const [authed, setAuthed] = useState(false);
+  const [checkingSession, setCheckingSession] = useState(true);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loginError, setLoginError] = useState("");
+  const [signingIn, setSigningIn] = useState(false);
 
   const [relics, setRelics] = useState<Relic[]>([]);
   const [loading, setLoading] = useState(false);
@@ -55,6 +55,17 @@ function Admin() {
   const [editing, setEditing] = useState<Relic | null>(null);
   const [pendingDelete, setPendingDelete] = useState<Relic | null>(null);
   const [deleting, setDeleting] = useState(false);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      setAuthed(Boolean(data.session));
+      setCheckingSession(false);
+    });
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+      setAuthed(Boolean(session));
+    });
+    return () => sub.subscription.unsubscribe();
+  }, []);
 
   async function refresh() {
     setLoading(true);
@@ -73,15 +84,28 @@ function Admin() {
     if (authed) refresh();
   }, [authed]);
 
-  function handleLogin(event: React.FormEvent) {
+  async function handleLogin(event: React.FormEvent) {
     event.preventDefault();
-    if (username === ADMIN_USER && password === ADMIN_PASS) {
-      setAuthed(true);
-      setLoginError("");
-      toast.success("Welcome back, admin");
-    } else {
-      setLoginError("Invalid username or password");
+    setSigningIn(true);
+    setLoginError("");
+    const raw = username.trim().toLowerCase();
+    const email = raw.includes("@") ? raw : `${raw}@kolinrelics.local`;
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+    setSigningIn(false);
+    if (error) {
+      setLoginError(error.message);
+      return;
     }
+    toast.success("Welcome back, admin");
+    setPassword("");
+  }
+
+  async function handleSignOut() {
+    await supabase.auth.signOut();
+    toast.success("Signed out");
   }
 
   function openCreate() {
@@ -124,6 +148,14 @@ function Admin() {
     }
   }
 
+  if (checkingSession) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
   if (!authed) {
     return (
       <div className="flex min-h-screen items-center justify-center px-4">
@@ -141,9 +173,12 @@ function Admin() {
                 <Label htmlFor="username">Username</Label>
                 <Input
                   id="username"
+                  type="text"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   autoComplete="username"
+                  placeholder="admin"
+                  required
                 />
               </div>
               <div className="space-y-2">
@@ -154,12 +189,14 @@ function Admin() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   autoComplete="current-password"
+                  required
                 />
               </div>
               {loginError && (
                 <p className="text-sm text-destructive">{loginError}</p>
               )}
-              <Button type="submit" className="w-full">
+              <Button type="submit" className="w-full" disabled={signingIn}>
+                {signingIn && <Loader2 className="h-4 w-4 animate-spin" />}
                 Sign in
               </Button>
             </form>
@@ -185,7 +222,7 @@ function Admin() {
               <Plus className="h-4 w-4" />
               Add relic
             </Button>
-            <Button variant="outline" onClick={() => setAuthed(false)} className="flex-1 sm:flex-none">
+            <Button variant="outline" onClick={handleSignOut} className="flex-1 sm:flex-none">
               Sign out
             </Button>
           </div>
