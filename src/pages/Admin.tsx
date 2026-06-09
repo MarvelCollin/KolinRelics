@@ -231,27 +231,43 @@ function Admin() {
 
       <main className="container py-6 sm:py-8">
         {loading ? (
-          <Card>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-border text-left text-muted-foreground">
-                    <th className="px-4 py-3 font-medium">Relic</th>
-                    <th className="px-4 py-3 font-medium">Status</th>
-                    <th className="px-4 py-3 font-medium">Buy</th>
-                    <th className="px-4 py-3 font-medium">Current</th>
-                    <th className="px-4 py-3 font-medium">Photos</th>
-                    <th className="px-4 py-3 text-right font-medium">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {Array.from({ length: 5 }).map((_, i) => (
-                    <RelicRowSkeleton key={i} />
-                  ))}
-                </tbody>
-              </table>
+          <>
+            <Card className="hidden md:block">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-border text-left text-muted-foreground">
+                      <th className="px-4 py-3 font-medium">Relic</th>
+                      <th className="px-4 py-3 font-medium">Status</th>
+                      <th className="px-4 py-3 font-medium">Buy</th>
+                      <th className="px-4 py-3 font-medium">Current</th>
+                      <th className="px-4 py-3 font-medium">Photos</th>
+                      <th className="px-4 py-3 text-right font-medium">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <RelicRowSkeleton key={i} />
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </Card>
+            <div className="space-y-3 md:hidden">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <Card key={i} className="p-3">
+                  <div className="flex gap-3">
+                    <div className="h-16 w-16 shrink-0 animate-pulse rounded-md bg-muted" />
+                    <div className="flex-1 space-y-2">
+                      <div className="h-4 w-2/3 animate-pulse rounded bg-muted" />
+                      <div className="h-3 w-full animate-pulse rounded bg-muted" />
+                      <div className="h-3 w-1/2 animate-pulse rounded bg-muted" />
+                    </div>
+                  </div>
+                </Card>
+              ))}
             </div>
-          </Card>
+          </>
         ) : relics.length === 0 ? (
           <div className="flex flex-col items-center gap-3 py-20 text-center text-muted-foreground">
             <p>No relics yet. Add your first one.</p>
@@ -261,88 +277,161 @@ function Admin() {
             </Button>
           </div>
         ) : (
-          <Card>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-border text-left text-muted-foreground">
-                    <th className="px-4 py-3 font-medium">Relic</th>
-                    <th className="px-4 py-3 font-medium">Status</th>
-                    <th className="px-4 py-3 font-medium">Buy</th>
-                    <th className="px-4 py-3 font-medium">Current</th>
-                    <th className="px-4 py-3 font-medium">Photos</th>
-                    <th className="px-4 py-3 text-right font-medium">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {relics.map((relic) => (
-                    <tr
-                      key={relic.id}
-                      className="border-b border-border/50 transition-colors last:border-0 hover:bg-muted/40"
-                    >
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-3">
-                          {relic.images[0] ? (
-                            <img
-                              src={relic.images[0]}
-                              alt={relic.name}
-                              className="h-12 w-12 rounded-md object-cover"
-                            />
-                          ) : (
-                            <div className="flex h-12 w-12 items-center justify-center rounded-md bg-muted text-muted-foreground">
-                              <ImageOff className="h-4 w-4" />
-                            </div>
-                          )}
-                          <div>
-                            <div className="font-medium">{relic.name}</div>
-                            <div className="line-clamp-1 max-w-xs text-xs text-muted-foreground">
-                              {relic.description}
+          <>
+            <Card className="hidden md:block">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-border text-left text-muted-foreground">
+                      <th className="px-4 py-3 font-medium">Relic</th>
+                      <th className="px-4 py-3 font-medium">Status</th>
+                      <th className="px-4 py-3 font-medium">Buy</th>
+                      <th className="px-4 py-3 font-medium">Current</th>
+                      <th className="px-4 py-3 font-medium">Photos</th>
+                      <th className="px-4 py-3 text-right font-medium">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {relics.map((relic) => (
+                      <tr
+                        key={relic.id}
+                        className="border-b border-border/50 transition-colors last:border-0 hover:bg-muted/40"
+                      >
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-3">
+                            {relic.images[0] ? (
+                              <img
+                                src={relic.images[0]}
+                                alt={relic.name}
+                                loading="lazy"
+                                decoding="async"
+                                className="h-12 w-12 rounded-md object-cover"
+                              />
+                            ) : (
+                              <div className="flex h-12 w-12 items-center justify-center rounded-md bg-muted text-muted-foreground">
+                                <ImageOff className="h-4 w-4" />
+                              </div>
+                            )}
+                            <div>
+                              <div className="font-medium">{relic.name}</div>
+                              <div className="line-clamp-1 max-w-xs text-xs text-muted-foreground">
+                                {relic.description}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3">
-                        <Badge variant={relic.status === "sold" ? "muted" : "info"} className="uppercase">
+                        </td>
+                        <td className="px-4 py-3">
+                          <Badge variant={relic.status === "sold" ? "muted" : "info"} className="uppercase">
+                            {relic.status}
+                          </Badge>
+                        </td>
+                        <td className="px-4 py-3 text-muted-foreground">
+                          {formatPrice(relic.price_buy)}
+                        </td>
+                        <td className="px-4 py-3">
+                          <Badge variant="success">
+                            {formatPrice(relic.price_current)}
+                          </Badge>
+                        </td>
+                        <td className="px-4 py-3 text-muted-foreground">
+                          {relic.images.length}
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex justify-end gap-2">
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              onClick={() => openEdit(relic)}
+                              aria-label="Edit relic"
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="destructive"
+                              size="icon"
+                              onClick={() => setPendingDelete(relic)}
+                              aria-label="Delete relic"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </Card>
+
+            <div className="space-y-3 md:hidden">
+              {relics.map((relic) => (
+                <Card key={relic.id} className="overflow-hidden">
+                  <div className="flex gap-3 p-3">
+                    {relic.images[0] ? (
+                      <img
+                        src={relic.images[0]}
+                        alt={relic.name}
+                        loading="lazy"
+                        decoding="async"
+                        className={`h-20 w-20 shrink-0 rounded-md object-cover ${relic.status === "sold" ? "grayscale" : ""}`}
+                      />
+                    ) : (
+                      <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
+                        <ImageOff className="h-5 w-5" />
+                      </div>
+                    )}
+                    <div className="min-w-0 flex-1 space-y-1">
+                      <div className="flex items-start justify-between gap-2">
+                        <h3 className="truncate font-medium leading-tight">{relic.name}</h3>
+                        <Badge
+                          variant={relic.status === "sold" ? "muted" : "info"}
+                          className="shrink-0 uppercase"
+                        >
                           {relic.status}
                         </Badge>
-                      </td>
-                      <td className="px-4 py-3 text-muted-foreground">
-                        {formatPrice(relic.price_buy)}
-                      </td>
-                      <td className="px-4 py-3">
+                      </div>
+                      {relic.description && (
+                        <p className="line-clamp-2 text-xs text-muted-foreground">
+                          {relic.description}
+                        </p>
+                      )}
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 pt-1 text-xs">
+                        <span className="text-muted-foreground">
+                          Buy {formatPrice(relic.price_buy)}
+                        </span>
                         <Badge variant="success">
                           {formatPrice(relic.price_current)}
                         </Badge>
-                      </td>
-                      <td className="px-4 py-3 text-muted-foreground">
-                        {relic.images.length}
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex justify-end gap-2">
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            onClick={() => openEdit(relic)}
-                            aria-label="Edit relic"
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="destructive"
-                            size="icon"
-                            onClick={() => setPendingDelete(relic)}
-                            aria-label="Delete relic"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                        <span className="text-muted-foreground">
+                          {relic.images.length} {relic.images.length === 1 ? "photo" : "photos"}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex gap-2 border-t border-border/60 bg-muted/20 p-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => openEdit(relic)}
+                      className="flex-1"
+                    >
+                      <Pencil className="h-4 w-4" />
+                      Edit
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => setPendingDelete(relic)}
+                      className="flex-1"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      Delete
+                    </Button>
+                  </div>
+                </Card>
+              ))}
             </div>
-          </Card>
+          </>
         )}
       </main>
 
