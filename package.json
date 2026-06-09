@@ -7,7 +7,6 @@
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
-    "lint": "eslint .",
     "migrate": "node scripts/migrate.cjs",
     "create-admin": "node scripts/create-admin.cjs"
   },
