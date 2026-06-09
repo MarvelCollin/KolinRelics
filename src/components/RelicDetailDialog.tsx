@@ -2,43 +2,40 @@ import { useRef, useState } from "react";
 import { ImageOff, ChevronLeft, ChevronRight, ShoppingBag } from "lucide-react";
 import type { Relic } from "@/types";
 import { cn, formatPrice } from "@/lib/utils";
-import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import ContactDialog from "@/components/ContactDialog";
-import RelicDetailDialog from "@/components/RelicDetailDialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface Props {
-  relic: Relic;
+  relic: Relic | null;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onBuy: () => void;
 }
 
 const SWIPE_THRESHOLD = 40;
 
-function RelicCard({ relic }: Props) {
+function RelicDetailDialog({ relic, open, onOpenChange, onBuy }: Props) {
   const [active, setActive] = useState(0);
-  const [contactOpen, setContactOpen] = useState(false);
-  const [detailOpen, setDetailOpen] = useState(false);
   const touchStartX = useRef<number | null>(null);
 
-  function handleBuyClick(e: React.MouseEvent) {
-    e.stopPropagation();
-    setContactOpen(true);
-  }
+  if (!relic) return null;
 
-  function handleBuyFromDetail() {
-    setDetailOpen(false);
-    setTimeout(() => setContactOpen(true), 120);
-  }
   const hasImages = relic.images.length > 0;
   const multipleImages = relic.images.length > 1;
   const isSold = relic.status === "sold";
 
   function prev() {
-    setActive((i) => (i === 0 ? relic.images.length - 1 : i - 1));
+    setActive((i) => (i === 0 ? relic!.images.length - 1 : i - 1));
   }
 
   function next() {
-    setActive((i) => (i === relic.images.length - 1 ? 0 : i + 1));
+    setActive((i) => (i === relic!.images.length - 1 ? 0 : i + 1));
   }
 
   function onTouchStart(e: React.TouchEvent) {
@@ -55,10 +52,22 @@ function RelicCard({ relic }: Props) {
   }
 
   return (
-    <>
-      <Card className="overflow-hidden flex flex-col transition-shadow hover:shadow-lg hover:shadow-black/20">
+    <Dialog
+      open={open}
+      onOpenChange={(o) => {
+        onOpenChange(o);
+        if (!o) setActive(0);
+      }}
+    >
+      <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle className="pr-6 text-xl leading-tight">
+            {relic.name}
+          </DialogTitle>
+        </DialogHeader>
+
         <div
-          className="group relative aspect-[4/3] w-full touch-pan-y select-none overflow-hidden bg-muted"
+          className="group relative aspect-[4/3] w-full select-none overflow-hidden rounded-md bg-muted"
           onTouchStart={onTouchStart}
           onTouchEnd={onTouchEnd}
         >
@@ -69,8 +78,6 @@ function RelicCard({ relic }: Props) {
               loading="lazy"
               decoding="async"
               draggable={false}
-              width={800}
-              height={600}
               className={cn(
                 "absolute inset-0 block h-full w-full object-cover",
                 isSold && "grayscale"
@@ -94,7 +101,7 @@ function RelicCard({ relic }: Props) {
                 type="button"
                 onClick={prev}
                 aria-label="Previous image"
-                className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-black/55 p-1.5 text-white backdrop-blur transition hover:bg-black/75 sm:opacity-0 sm:group-hover:opacity-100"
+                className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-black/55 p-1.5 text-white backdrop-blur transition hover:bg-black/75"
               >
                 <ChevronLeft className="h-4 w-4" />
               </button>
@@ -102,7 +109,7 @@ function RelicCard({ relic }: Props) {
                 type="button"
                 onClick={next}
                 aria-label="Next image"
-                className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-black/55 p-1.5 text-white backdrop-blur transition hover:bg-black/75 sm:opacity-0 sm:group-hover:opacity-100"
+                className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-black/55 p-1.5 text-white backdrop-blur transition hover:bg-black/75"
               >
                 <ChevronRight className="h-4 w-4" />
               </button>
@@ -127,60 +134,37 @@ function RelicCard({ relic }: Props) {
           )}
         </div>
 
-        <CardContent
-          role="button"
-          tabIndex={0}
-          onClick={() => setDetailOpen(true)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" || e.key === " ") {
-              e.preventDefault();
-              setDetailOpen(true);
-            }
-          }}
-          className="flex flex-1 cursor-pointer flex-col gap-3 p-4 outline-none transition-colors hover:bg-muted/40 focus-visible:bg-muted/40"
-        >
-          <div className="space-y-1">
-            <h2 className="text-lg font-semibold leading-tight">{relic.name}</h2>
-            {relic.description && (
-              <p className="line-clamp-2 text-sm text-muted-foreground">
-                {relic.description}
-              </p>
-            )}
+        {relic.description && (
+          <p className="whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground">
+            {relic.description}
+          </p>
+        )}
+
+        <div className="grid grid-cols-2 gap-3 rounded-md border border-border bg-muted/30 p-3 text-sm">
+          <div>
+            <p className="text-xs text-muted-foreground">Buy price</p>
+            <p className="font-medium">{formatPrice(relic.price_buy)}</p>
           </div>
-          <div className="mt-auto flex items-center justify-between pt-2">
-            <span className="text-xs text-muted-foreground">
-              Buy {formatPrice(relic.price_buy)}
-            </span>
+          <div>
+            <p className="text-xs text-muted-foreground">Sell price</p>
             <Badge variant="success" className="text-sm">
               {formatPrice(relic.price_current)}
             </Badge>
           </div>
-          <Button
-            type="button"
-            onClick={handleBuyClick}
-            disabled={isSold}
-            className="w-full"
-          >
-            <ShoppingBag className="h-4 w-4" />
-            {isSold ? "Sold out" : "Buy"}
-          </Button>
-        </CardContent>
-      </Card>
+        </div>
 
-      <RelicDetailDialog
-        relic={relic}
-        open={detailOpen}
-        onOpenChange={setDetailOpen}
-        onBuy={handleBuyFromDetail}
-      />
-
-      <ContactDialog
-        relic={relic}
-        open={contactOpen}
-        onOpenChange={setContactOpen}
-      />
-    </>
+        <Button
+          type="button"
+          onClick={onBuy}
+          disabled={isSold}
+          className="w-full"
+        >
+          <ShoppingBag className="h-4 w-4" />
+          {isSold ? "Sold out" : "Buy"}
+        </Button>
+      </DialogContent>
+    </Dialog>
   );
 }
 
-export default RelicCard;
+export default RelicDetailDialog;

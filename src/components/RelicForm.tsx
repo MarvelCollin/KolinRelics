@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Loader2, Upload, X, Link as LinkIcon } from "lucide-react";
+import { Loader2, Upload, X, Camera } from "lucide-react";
 import { toast } from "sonner";
 import type { Relic, RelicInput, RelicStatus } from "@/types";
 import { uploadImages } from "@/lib/relics";
@@ -21,7 +21,6 @@ function RelicForm({ initial, onSubmit, onCancel }: Props) {
   const [priceCurrent, setPriceCurrent] = useState(String(initial?.price_current ?? ""));
   const [images, setImages] = useState<string[]>(initial?.images ?? []);
   const [status, setStatus] = useState<RelicStatus>(initial?.status ?? "new");
-  const [imageUrl, setImageUrl] = useState("");
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -42,24 +41,6 @@ function RelicForm({ initial, onSubmit, onCancel }: Props) {
     } finally {
       setUploading(false);
     }
-  }
-
-  function addImageUrl() {
-    const url = imageUrl.trim();
-    if (!url) return;
-    try {
-      new URL(url);
-    } catch {
-      toast.error("Invalid URL");
-      return;
-    }
-    if (images.includes(url)) {
-      toast.error("Image already added");
-      return;
-    }
-    setImages((prev) => [...prev, url]);
-    setImageUrl("");
-    toast.success("Image added");
   }
 
   function removeImage(url: string) {
@@ -151,48 +132,35 @@ function RelicForm({ initial, onSubmit, onCancel }: Props) {
 
       <div className="space-y-3">
         <Label>Images</Label>
-        <label className="flex cursor-pointer items-center justify-center gap-2 rounded-md border border-dashed border-input py-6 text-sm text-muted-foreground transition-colors hover:border-ring hover:text-foreground">
-          {uploading ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <Upload className="h-4 w-4" />
-          )}
-          {uploading ? "Uploading..." : "Click to upload photos"}
-          <input
-            type="file"
-            accept="image/*"
-            multiple
-            className="hidden"
-            onChange={(e) => handleFiles(e.target.files)}
-          />
-        </label>
-
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <span className="h-px flex-1 bg-border" />
-          OR
-          <span className="h-px flex-1 bg-border" />
-        </div>
-
-        <div className="flex gap-2">
-          <div className="relative flex-1">
-            <LinkIcon className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              type="url"
-              value={imageUrl}
-              onChange={(e) => setImageUrl(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  addImageUrl();
-                }
-              }}
-              placeholder="https://example.com/photo.jpg"
-              className="pl-8"
+        <div className="grid grid-cols-2 gap-2">
+          <label className="flex cursor-pointer items-center justify-center gap-2 rounded-md border border-dashed border-input py-6 text-sm text-muted-foreground transition-colors hover:border-ring hover:text-foreground">
+            {uploading ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Upload className="h-4 w-4" />
+            )}
+            {uploading ? "Uploading" : "Upload"}
+            <input
+              type="file"
+              accept="image/*"
+              multiple
+              className="hidden"
+              onChange={(e) => handleFiles(e.target.files)}
+              disabled={uploading}
             />
-          </div>
-          <Button type="button" variant="outline" onClick={addImageUrl}>
-            Add
-          </Button>
+          </label>
+          <label className="flex cursor-pointer items-center justify-center gap-2 rounded-md border border-dashed border-input py-6 text-sm text-muted-foreground transition-colors hover:border-ring hover:text-foreground">
+            <Camera className="h-4 w-4" />
+            Take photo
+            <input
+              type="file"
+              accept="image/*"
+              capture="environment"
+              className="hidden"
+              onChange={(e) => handleFiles(e.target.files)}
+              disabled={uploading}
+            />
+          </label>
         </div>
       </div>
 
@@ -203,6 +171,8 @@ function RelicForm({ initial, onSubmit, onCancel }: Props) {
               <img
                 src={url}
                 alt="relic"
+                loading="lazy"
+                decoding="async"
                 className="h-full w-full rounded-md object-cover"
               />
               <button
